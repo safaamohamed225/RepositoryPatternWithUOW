@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using RepositoryPatternWithUOW.Core;
 using RepositoryPatternWithUOW.Core.Consts;
 using RepositoryPatternWithUOW.Core.Interfaces;
 using RepositoryPatternWithUOW.Core.Models;
@@ -10,19 +11,19 @@ namespace RepositoryPatternWithUOW.Api.Controllers
     [ApiController]
     public class BooksController : ControllerBase
     {
-        private readonly IGenericRepository<Book> _bookRepo;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public BooksController(IGenericRepository<Book> bookRepo)
+        public BooksController(IUnitOfWork unitOfWork)
         {
-            _bookRepo = bookRepo;
+            _unitOfWork = unitOfWork;
         }
 
 
-        [HttpGet]
+        [HttpGet("id")]
 
-        public async Task<IActionResult> GetById()
+        public async Task<IActionResult> GetById([FromQuery] int id)
         {
-            var book = await _bookRepo.GetByIdAsync(1);
+            var book = await _unitOfWork.Books.GetByIdAsync(id);
 
             return Ok(book);
         }
@@ -30,7 +31,7 @@ namespace RepositoryPatternWithUOW.Api.Controllers
 
         public async Task<IActionResult> GetAll()
         {
-            var all = await _bookRepo.GetAllAsync();
+            var all = await _unitOfWork.Books.GetAllAsync();
             return Ok(all);
         }
 
@@ -38,7 +39,7 @@ namespace RepositoryPatternWithUOW.Api.Controllers
 
         public async Task<IActionResult> GetByTitle([FromQuery] string title)
         {
-            var founded = await _bookRepo.FindAsync(b=>b.Title == title, new[] {"Author"} );
+            var founded = await _unitOfWork.Books.FindAsync(b=>b.Title == title, new[] {"Author"} );
 
             if (founded == null)
                 return NotFound($"This book named {title} not found");
@@ -51,7 +52,7 @@ namespace RepositoryPatternWithUOW.Api.Controllers
 
         public async Task<IActionResult> GetAllWithAuthors([FromQuery] string title)
         {
-            var founded = await _bookRepo.FindAllAsync(b => b.Title.Contains(title), new[] { "Author" });
+            var founded = await _unitOfWork.Books.FindAllAsync(b => b.Title.Contains(title), new[] { "Author" });
 
             if (founded == null)
                 return NotFound($"This book named {title} not found");
@@ -63,7 +64,7 @@ namespace RepositoryPatternWithUOW.Api.Controllers
 
         public async Task<IActionResult> GetOrderd([FromQuery] string title)
         {
-            var founded = await _bookRepo.FindAllAsync(b => b.Title.Contains(title), null, null, b=>b.Id, OrderBy.Descending);
+            var founded = await _unitOfWork.Books.FindAllAsync(b => b.Title.Contains(title), null, null, b=>b.Id, OrderBy.Descending);
 
             if (founded == null)
                 return NotFound($"This book named {title} not found");
@@ -77,8 +78,11 @@ namespace RepositoryPatternWithUOW.Api.Controllers
             if (book == null)
                 return BadRequest("Book data is required.");
 
-            var addedBook = await _bookRepo.AddAsync(book);
+            var addedBook = await _unitOfWork.Books.AddAsync(book);
+            await _unitOfWork.Complete();
+
             return CreatedAtAction(nameof(GetByTitle), new { title = addedBook.Title }, addedBook);
+            //return Ok(addedBook);
         }
 
         [HttpPost("AddBooks")]
@@ -87,7 +91,7 @@ namespace RepositoryPatternWithUOW.Api.Controllers
             if (books == null || books.Count == 0)
                 return BadRequest("Books list is required.");
 
-            var addedBooks = await _bookRepo.AddRangeAsync(books);
+            var addedBooks = await _unitOfWork.Books.AddRangeAsync(books);
             return Ok(addedBooks);
         }
 

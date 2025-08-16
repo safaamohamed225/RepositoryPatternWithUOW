@@ -1,5 +1,6 @@
 
 using Microsoft.EntityFrameworkCore;
+using RepositoryPatternWithUOW.Core;
 using RepositoryPatternWithUOW.Core.Interfaces;
 using RepositoryPatternWithUOW.EF;
 using RepositoryPatternWithUOW.EF.Repositories;
@@ -21,7 +22,8 @@ namespace RepositoryPatternWithUOW.Api
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
                     b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName));
             });
-            builder.Services.AddTransient(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+            //builder.Services.AddTransient(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+            builder.Services.AddTransient<IUnitOfWork, UnitOfWork>();
             builder.Services.AddSwaggerGen();
 
             var app = builder.Build();

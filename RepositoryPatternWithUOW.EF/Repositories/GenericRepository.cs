@@ -33,7 +33,7 @@ namespace RepositoryPatternWithUOW.EF.Repositories
             return all;
         }
 
-        public async Task<T> FindAsync(Expression<Func<T,bool>> critaria, string[] includes = null)
+        public async Task<T> FindAsync(Expression<Func<T,bool>> criteria, string[] includes = null)
         {
 
             IQueryable<T>query = _context.Set<T>();
@@ -43,11 +43,11 @@ namespace RepositoryPatternWithUOW.EF.Repositories
                 foreach (var include in includes)
                     query = query.Include(include);
             }
-            var founded = await query.SingleOrDefaultAsync(critaria);
+            var founded = await query.SingleOrDefaultAsync(criteria);
             return founded!;
         }
 
-        public async Task<IEnumerable<T>> FindAllAsync(Expression<Func<T, bool>> critaria, string[] includes = null)
+        public async Task<IEnumerable<T>> FindAllAsync(Expression<Func<T, bool>> criteria, string[] includes = null)
         {
             IQueryable<T> query = _context.Set<T>();
 
@@ -56,18 +56,18 @@ namespace RepositoryPatternWithUOW.EF.Repositories
                 foreach (var include in includes)
                     query = query.Include(include);
             }
-            var founded = await query.Where(critaria).ToListAsync();
+            var founded = await query.Where(criteria).ToListAsync();
             return founded!;
         }
 
-        public async Task<IEnumerable<T>> FindAllAsync(Expression<Func<T, bool>> critaria, int skip, int take)
+        public async Task<IEnumerable<T>> FindAllAsync(Expression<Func<T, bool>> criteria, int skip, int take)
         {
-            return await _context.Set<T>().Where(critaria).Skip(skip).Take(take).ToListAsync();
+            return await _context.Set<T>().Where(criteria).Skip(skip).Take(take).ToListAsync();
         }
 
-        public async Task<IEnumerable<T>> FindAllAsync(Expression<Func<T, bool>> critaria, int? skip, int? take, Expression<Func<T, object>> orderBy = null, string orderByDirection = OrderBy.Ascending)
+        public async Task<IEnumerable<T>> FindAllAsync(Expression<Func<T, bool>> criteria, int? skip, int? take, Expression<Func<T, object>> orderBy = null, string orderByDirection = OrderBy.Ascending)
         {
-            IQueryable<T> query = _context.Set<T>().Where(critaria);
+            IQueryable<T> query = _context.Set<T>().Where(criteria);
 
             if (take.HasValue)
                 query = query.Take(take.Value);
@@ -97,6 +97,36 @@ namespace RepositoryPatternWithUOW.EF.Repositories
             await _context.Set<T>().AddRangeAsync(entities);
             await _context.SaveChangesAsync();
             return entities;
+        }
+
+        public T Update(T entity)
+        {
+
+             _context.Update(entity);
+             return entity;
+        }
+
+        public void Delete(T entity)
+        {
+            _context.Set<T>().Remove(entity);
+        }
+        public void DeleteRange(IEnumerable<T> entities)
+        {
+            _context.Set<T>().RemoveRange(entities);
+        }
+        public void Attach(T entity)
+        {
+            _context.Set<T>().Attach(entity);
+        }
+
+        public async Task<int> Count()
+        {
+            return await _context.Set<T>().CountAsync();
+        }
+
+        public async Task<int> Count(Expression<Func<T, bool>> criteria)
+        {
+            return await _context.Set<T>().CountAsync(criteria);
         }
     }
 }
